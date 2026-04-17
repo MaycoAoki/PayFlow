@@ -1,1 +1,10 @@
 .worktrees/
+target/
+*.class
+.idea/
+*.iml
+.vscode/
+*.log
+*.jar
+!*-SNAPSHOT.jar
+.DS_Store
