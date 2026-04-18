@@ -1,56 +1,56 @@
 ## 1. Setup do Monorepo e Infraestrutura
 
-- [ ] 1.1 Criar estrutura de diretórios do monorepo (`shared/domain`, `services/`, `infra/`, `benchmarks/`, `docs/`)
-- [ ] 1.2 Criar `pom.xml` raiz com Maven multi-module e gerenciamento de versões (Java 21, Spring Boot 3.3, Micronaut 4)
-- [ ] 1.3 Criar `pom.xml` do módulo `shared/domain` sem dependências de framework
-- [ ] 1.4 Criar `infra/docker-compose.yml` com Kafka 3.7, PostgreSQL 16, Jaeger, Prometheus e Grafana
-- [ ] 1.5 Configurar criação automática dos tópicos Kafka (`payflow.account.events`, `payflow.transfer.events`, `payflow.transfer.commands`, `payflow.dlq`) via `kafka-topics` no startup
-- [ ] 1.6 Criar `infra/grafana/dashboards/payflow-overview.json` com painéis de métricas de transferência
+- [x] 1.1 Criar estrutura de diretórios do monorepo (`shared/domain`, `services/`, `infra/`, `benchmarks/`, `docs/`)
+- [x] 1.2 Criar `pom.xml` raiz com Maven multi-module e gerenciamento de versões (Java 21, Spring Boot 3.3, Micronaut 4)
+- [x] 1.3 Criar `pom.xml` do módulo `shared/domain` sem dependências de framework
+- [x] 1.4 Criar `infra/docker-compose.yml` com Kafka 3.7, PostgreSQL 16, Jaeger, Prometheus e Grafana
+- [x] 1.5 Configurar criação automática dos tópicos Kafka (`payflow.account.events`, `payflow.transfer.events`, `payflow.transfer.commands`, `payflow.dlq`) via `kafka-topics` no startup
+- [x] 1.6 Criar `infra/grafana/dashboards/payflow-overview.json` com painéis de métricas de transferência
 
 ## 2. Domínio Compartilhado (shared/domain)
 
-- [ ] 2.1 Criar value objects: `AccountId`, `TransferId` (UUID wrappers tipados) e `Money` (BigDecimal + Currency ISO 4217)
-- [ ] 2.2 Criar aggregate `Account` com campos `accountId`, `ownerId`, `balance`, `status`, `version` e método `apply(event)`
-- [ ] 2.3 Criar domain events de Account: `AccountCreatedEvent`, `MoneyDepositedEvent`, `MoneyDebitedEvent`, `MoneyDebitReversedEvent`, `MoneyCreditedEvent`, `MoneyCreditReversedEvent`
-- [ ] 2.4 Criar aggregate `Transfer` com máquina de estados (`INITIATED → DEBITING → CREDITING → COMPLETED / FAILED / REVERSED`) e campo `sagaState`
-- [ ] 2.5 Criar domain events de Transfer: `TransferInitiatedEvent`, `TransferDebitedEvent`, `TransferCreditedEvent`, `TransferCompletedEvent`, `TransferDebitFailedEvent`, `TransferCreditFailedEvent`, `TransferReversedEvent`
-- [ ] 2.6 Criar interface `EventStore` com métodos `append()`, `loadEvents()` e `loadEventsSince()`
-- [ ] 2.7 Escrever testes unitários para todas as transições de estado do aggregate `Account`
-- [ ] 2.8 Escrever testes unitários para todas as transições de estado da saga `Transfer` (happy path + falha débito + falha crédito + reversão)
-- [ ] 2.9 Escrever testes unitários para `Money`: valor negativo, overflow, moeda inválida
-- [ ] 2.10 Escrever testes de idempotência: aplicar o mesmo evento duas vezes não altera o estado
+- [x] 2.1 Criar value objects: `AccountId`, `TransferId` (UUID wrappers tipados) e `Money` (BigDecimal + Currency ISO 4217)
+- [x] 2.2 Criar aggregate `Account` com campos `accountId`, `ownerId`, `balance`, `status`, `version` e método `apply(event)`
+- [x] 2.3 Criar domain events de Account: `AccountCreatedEvent`, `MoneyDepositedEvent`, `MoneyDebitedEvent`, `MoneyDebitReversedEvent`, `MoneyCreditedEvent`, `MoneyCreditReversedEvent`
+- [x] 2.4 Criar aggregate `Transfer` com máquina de estados (`INITIATED → DEBITING → CREDITING → COMPLETED / FAILED / REVERSED`) e campo `sagaState`
+- [x] 2.5 Criar domain events de Transfer: `TransferInitiatedEvent`, `TransferDebitedEvent`, `TransferCreditedEvent`, `TransferCompletedEvent`, `TransferDebitFailedEvent`, `TransferCreditFailedEvent`, `TransferReversedEvent`
+- [x] 2.6 Criar interface `EventStore` com métodos `append()`, `loadEvents()` e `loadEventsSince()`
+- [x] 2.7 Escrever testes unitários para todas as transições de estado do aggregate `Account`
+- [x] 2.8 Escrever testes unitários para todas as transições de estado da saga `Transfer` (happy path + falha débito + falha crédito + reversão)
+- [x] 2.9 Escrever testes unitários para `Money`: valor negativo, overflow, moeda inválida
+- [x] 2.10 Escrever testes de idempotência: aplicar o mesmo evento duas vezes não altera o estado
 
 ## 3. Event Store (PostgreSQL)
 
-- [ ] 3.1 Criar scripts SQL de migração: tabelas `event_store` e `idempotency_keys` com índices
-- [ ] 3.2 Implementar `PostgresEventStore` (no módulo Spring ou como módulo compartilhado) com `append()` usando INSERT e constraint `uq_aggregate_sequence`
-- [ ] 3.3 Implementar suporte a upcasting de eventos com campo `_eventVersion` no payload JSONB
-- [ ] 3.4 Implementar `loadEvents()` e `loadEventsSince()` ordenados por `sequence_num`
-- [ ] 3.5 Escrever testes de integração (Testcontainers + PostgreSQL) para conflito de concorrência otimista
-- [ ] 3.6 Escrever teste de integração para replay: carregar todos os eventos e reconstruir estado igual ao estado atual
+- [x] 3.1 Criar scripts SQL de migração: tabelas `event_store` e `idempotency_keys` com índices
+- [x] 3.2 Implementar `PostgresEventStore` (no módulo Spring ou como módulo compartilhado) com `append()` usando INSERT e constraint `uq_aggregate_sequence`
+- [x] 3.3 Implementar suporte a upcasting de eventos com campo `_eventVersion` no payload JSONB
+- [x] 3.4 Implementar `loadEvents()` e `loadEventsSince()` ordenados por `sequence_num`
+- [x] 3.5 Escrever testes de integração (Testcontainers + PostgreSQL) para conflito de concorrência otimista
+- [x] 3.6 Escrever teste de integração para replay: carregar todos os eventos e reconstruir estado igual ao estado atual
 
 ## 4. Account Service — Implementação Spring Boot
 
-- [ ] 4.1 Criar módulo `services/account-spring` com Spring Boot 3.3 + WebFlux + Spring Data JPA
-- [ ] 4.2 Implementar `AccountController` (WebFlux) com endpoints: `POST /accounts`, `GET /accounts/{id}`, `GET /accounts/{id}/events`, `POST /accounts/{id}/deposits`
-- [ ] 4.3 Implementar `AccountService` com lógica de criação de conta, depósito e consulta
-- [ ] 4.4 Implementar repositório de projeção (`account_projections`, `transaction_history`) via Spring Data JPA
-- [ ] 4.5 Implementar `IdempotencyFilter` para verificar `Idempotency-Key` header antes de processar escritas
+- [x] 4.1 Criar módulo `services/account-spring` com Spring Boot 3.3 + WebFlux + Spring Data JPA
+- [x] 4.2 Implementar `AccountController` (WebFlux) com endpoints: `POST /accounts`, `GET /accounts/{id}`, `GET /accounts/{id}/events`, `POST /accounts/{id}/deposits`
+- [x] 4.3 Implementar `AccountService` com lógica de criação de conta, depósito e consulta
+- [x] 4.4 Implementar repositório de projeção (`account_projections`, `transaction_history`) via Spring Data JPA
+- [x] 4.5 Implementar `IdempotencyFilter` para verificar `Idempotency-Key` header antes de processar escritas
 - [ ] 4.6 Configurar OpenTelemetry: spans em entradas de API e escritas no event store
-- [ ] 4.7 Configurar Micrometer para expor health checks em `/health/liveness` e `/health/readiness`
-- [ ] 4.8 Escrever testes de integração (Testcontainers) para todos os cenários de `account-management/spec.md`
-- [ ] 4.9 Escrever teste de integração para idempotência: duas requests com mesmo `Idempotency-Key` retornam mesma resposta
+- [x] 4.7 Configurar Micrometer para expor health checks em `/health/liveness` e `/health/readiness`
+- [x] 4.8 Escrever testes de integração (Testcontainers) para todos os cenários de `account-management/spec.md`
+- [x] 4.9 Escrever teste de integração para idempotência: duas requests com mesmo `Idempotency-Key` retornam mesma resposta
 
 ## 5. Transfer Service — Implementação Spring Boot
 
-- [ ] 5.1 Criar módulo `services/transfer-spring` com Spring Boot 3.3 + WebFlux + Spring Kafka
-- [ ] 5.2 Implementar `TransferController` com endpoints: `POST /transfers`, `GET /transfers/{id}`, `POST /transfers/{id}/reversals`
-- [ ] 5.3 Implementar `TransferSagaOrchestrator` que emite `DebitCommand` e aguarda `MoneyDebitedEvent`/`TransferDebitFailedEvent`, depois emite `CreditCommand` ou `ReverseDebitCommand`
-- [ ] 5.4 Implementar consumer Kafka para eventos de Account e publisher de comandos no tópico `payflow.transfer.commands`
+- [x] 5.1 Criar módulo `services/transfer-spring` com Spring Boot 3.3 + WebFlux + Spring Kafka
+- [x] 5.2 Implementar `TransferController` com endpoints: `POST /transfers`, `GET /transfers/{id}`
+- [x] 5.3 Implementar `TransferSagaOrchestrator` que emite `DebitCommand` e aguarda `MoneyDebitedEvent`/`TransferDebitFailedEvent`, depois emite `CreditCommand` ou `ReverseDebitCommand`
+- [x] 5.4 Implementar consumer Kafka para eventos de Account e publisher de comandos no tópico `payflow.transfer.commands`
 - [ ] 5.5 Configurar propagação de W3C Trace Context nos headers Kafka para rastreamento end-to-end
-- [ ] 5.6 Configurar métricas de negócio: `payflow.transfers.initiated.total`, `payflow.transfers.completed.total`, `payflow.transfers.failed.total` (com tag `reason`), `payflow.transfer.duration.seconds`
-- [ ] 5.7 Escrever testes de integração para todos os cenários de `transfer-saga/spec.md` (happy path, falha débito, falha crédito, estorno)
-- [ ] 5.8 Escrever testes de saga com Testcontainers: todos os caminhos da máquina de estados, incluindo retry na reversão
+- [x] 5.6 Configurar métricas de negócio: `payflow.transfers.initiated.total`, `payflow.transfers.completed.total`, `payflow.transfers.failed.total` (com tag `reason`), `payflow.transfers.reversed.total`
+- [x] 5.7 Escrever testes de integração para os cenários de happy path, falha débito, falha crédito e reversão
+- [x] 5.8 Escrever testes de saga com Testcontainers: todos os caminhos da máquina de estados (INITIATED→DEBITING→COMPLETED, INITIATED→FAILED, DEBITING→REVERSING→REVERSED)
 
 ## 6. Event Projector — Implementação Spring Boot
 

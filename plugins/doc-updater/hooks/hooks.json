@@ -1,0 +1,29 @@
+{
+  "description": "Injects changed file context for doc-updater agent and saves doc commit markers",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/inject-changed-files.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/save-doc-commit.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

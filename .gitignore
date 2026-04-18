@@ -8,3 +8,11 @@ target/
 *.jar
 !*-SNAPSHOT.jar
 .DS_Store
+
+# TDD enforcer markers (session-scoped, never commit)
+.tdd-state
+.tdd-state-*
+
+# Claude Code internal state
+.claude/.last-doc-commit
+.claude/.doc-updater-context

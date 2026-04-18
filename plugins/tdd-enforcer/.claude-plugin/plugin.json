@@ -1,0 +1,9 @@
+{
+  "name": "tdd-enforcer",
+  "version": "1.1.0",
+  "description": "Enforces Test-Driven Development (TDD) workflow. Blocks source code edits without a failing test first. Language and framework agnostic.",
+  "author": {
+    "name": "André Lima"
+  },
+  "keywords": ["tdd", "testing", "enforcement", "quality"]
+}

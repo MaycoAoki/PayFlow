@@ -1,0 +1,5 @@
+{
+  "name": "doc-updater",
+  "version": "1.0.0",
+  "description": "Agent that proactively updates project documentation (CLAUDE.md, README, etc.) after code changes"
+}
