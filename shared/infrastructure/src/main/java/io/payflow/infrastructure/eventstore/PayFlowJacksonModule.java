@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -52,7 +53,8 @@ public class PayFlowJacksonModule extends SimpleModule {
     public static ObjectMapper createObjectMapper() {
         return new ObjectMapper()
                 .registerModule(new JavaTimeModule())
-                .registerModule(new PayFlowJacksonModule());
+                .registerModule(new PayFlowJacksonModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     // -------------------------------------------------------------------------

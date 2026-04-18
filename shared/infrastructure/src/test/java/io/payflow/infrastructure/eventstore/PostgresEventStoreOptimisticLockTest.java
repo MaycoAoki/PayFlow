@@ -6,6 +6,7 @@ import io.payflow.domain.model.AccountId;
 import io.payflow.domain.model.Money;
 import io.payflow.domain.port.OptimisticLockException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.postgresql.ds.PGSimpleDataSource;
@@ -22,6 +23,7 @@ import java.time.Instant;
 import java.util.Currency;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -37,7 +39,19 @@ class PostgresEventStoreOptimisticLockTest {
     private javax.sql.DataSource dataSource;
     private ObjectMapper objectMapper;
 
-    private static boolean migrationsRun = false;
+    @BeforeAll
+    static void runMigrations() throws Exception {
+        PGSimpleDataSource ds = new PGSimpleDataSource();
+        ds.setUrl(POSTGRES.getJdbcUrl());
+        ds.setUser(POSTGRES.getUsername());
+        ds.setPassword(POSTGRES.getPassword());
+        try (Connection conn = ds.getConnection(); Statement stmt = conn.createStatement()) {
+            String v1 = Files.readString(Paths.get("src/main/resources/db/migration/V1__create_event_store.sql"));
+            String v2 = Files.readString(Paths.get("src/main/resources/db/migration/V2__create_idempotency_keys.sql"));
+            stmt.execute(v1);
+            stmt.execute(v2);
+        }
+    }
 
     @BeforeEach
     void setUp() throws Exception {
@@ -46,17 +60,6 @@ class PostgresEventStoreOptimisticLockTest {
         ds.setUser(POSTGRES.getUsername());
         ds.setPassword(POSTGRES.getPassword());
         this.dataSource = ds;
-
-        // Run migrations only once per container lifecycle
-        if (!migrationsRun) {
-            try (Connection conn = ds.getConnection(); Statement stmt = conn.createStatement()) {
-                String v1 = Files.readString(Paths.get("src/main/resources/db/migration/V1__create_event_store.sql"));
-                String v2 = Files.readString(Paths.get("src/main/resources/db/migration/V2__create_idempotency_keys.sql"));
-                stmt.execute(v1);
-                stmt.execute(v2);
-            }
-            migrationsRun = true;
-        }
 
         objectMapper = PayFlowJacksonModule.createObjectMapper();
     }
@@ -79,49 +82,46 @@ class PostgresEventStoreOptimisticLockTest {
                 Instant.now()
         );
 
-        PostgresEventStore store1 = new PostgresEventStore(dataSource, objectMapper, EventTypeRegistry.defaultRegistry());
-        PostgresEventStore store2 = new PostgresEventStore(dataSource, objectMapper, EventTypeRegistry.defaultRegistry());
+        PostgresEventStore store = new PostgresEventStore(dataSource, objectMapper, EventTypeRegistry.defaultRegistry());
 
+        CyclicBarrier barrier = new CyclicBarrier(2);
         AtomicInteger successCount = new AtomicInteger(0);
         AtomicInteger failCount = new AtomicInteger(0);
-        AtomicReference<Throwable> store1Error = new AtomicReference<>();
-        AtomicReference<Throwable> store2Error = new AtomicReference<>();
+        AtomicReference<Throwable> unexpectedError = new AtomicReference<>();
 
         Thread t1 = new Thread(() -> {
             try {
-                store1.append(aggregateId, "Account", 0, List.of(event1));
+                barrier.await();
+                store.append(aggregateId, "Account", 0, List.of(event1));
                 successCount.incrementAndGet();
             } catch (OptimisticLockException e) {
                 failCount.incrementAndGet();
             } catch (Throwable t) {
-                store1Error.set(t);
+                unexpectedError.set(t);
             }
         });
-
         Thread t2 = new Thread(() -> {
             try {
-                store2.append(aggregateId, "Account", 0, List.of(event2));
+                barrier.await();
+                store.append(aggregateId, "Account", 0, List.of(event2));
                 successCount.incrementAndGet();
             } catch (OptimisticLockException e) {
                 failCount.incrementAndGet();
             } catch (Throwable t) {
-                store2Error.set(t);
+                unexpectedError.set(t);
             }
         });
-
         t1.start();
         t2.start();
         t1.join(5000);
         t2.join(5000);
 
-        assertThat(store1Error.get()).isNull();
-        assertThat(store2Error.get()).isNull();
-
+        assertThat(unexpectedError.get()).isNull();
         assertThat(successCount.get()).isEqualTo(1);
         assertThat(failCount.get()).isEqualTo(1);
 
         // Verify only 1 event in the store
-        List<DomainEvent> events = store1.loadEvents(aggregateId);
+        List<DomainEvent> events = store.loadEvents(aggregateId);
         assertThat(events).hasSize(1);
     }
 

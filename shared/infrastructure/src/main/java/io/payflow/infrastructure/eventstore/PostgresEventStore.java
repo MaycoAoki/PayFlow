@@ -69,35 +69,40 @@ public class PostgresEventStore implements EventStore {
         if (events == null || events.isEmpty()) {
             throw new IllegalArgumentException("events must not be empty");
         }
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(INSERT_SQL)) {
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(INSERT_SQL)) {
 
-            for (int i = 0; i < events.size(); i++) {
-                DomainEvent event = events.get(i);
-                long sequenceNum = expectedVersion + i + 1;
+                for (int i = 0; i < events.size(); i++) {
+                    DomainEvent event = events.get(i);
+                    long sequenceNum = expectedVersion + i + 1;
 
-                // Build payload: serialize event + inject _eventVersion
-                ObjectNode payloadNode = objectMapper.valueToTree(event);
-                payloadNode.put("_eventVersion", event.eventVersion());
-                String payloadJson = objectMapper.writeValueAsString(payloadNode);
+                    // Build payload: serialize event + inject _eventVersion
+                    ObjectNode payloadNode = objectMapper.valueToTree(event);
+                    payloadNode.put("_eventVersion", event.eventVersion());
+                    String payloadJson = objectMapper.writeValueAsString(payloadNode);
 
-                ps.setString(1, aggregateId);
-                ps.setString(2, aggregateType);
-                ps.setString(3, event.getClass().getSimpleName());
-                ps.setShort(4, (short) event.eventVersion());
-                ps.setLong(5, sequenceNum);
-                ps.setString(6, payloadJson);
-                ps.setTimestamp(7, Timestamp.from(event.occurredAt()));
-                ps.addBatch();
+                    ps.setString(1, aggregateId);
+                    ps.setString(2, aggregateType);
+                    ps.setString(3, event.getClass().getSimpleName());
+                    ps.setShort(4, (short) event.eventVersion());
+                    ps.setLong(5, sequenceNum);
+                    ps.setString(6, payloadJson);
+                    ps.setTimestamp(7, Timestamp.from(event.occurredAt()));
+                    ps.addBatch();
+                }
+
+                ps.executeBatch();
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                if (isUniqueViolation(e)) {
+                    throw new OptimisticLockException(aggregateId, expectedVersion, expectedVersion + 1);
+                }
+                throw new RuntimeException("Failed to append events for aggregate: " + aggregateId, e);
             }
-
-            ps.executeBatch();
-
-        } catch (SQLException e) {
-            if (isUniqueViolation(e)) {
-                throw new OptimisticLockException(aggregateId, expectedVersion, expectedVersion + 1);
-            }
-            throw new RuntimeException("Failed to append events for aggregate " + aggregateId, e);
+        } catch (OptimisticLockException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize events for aggregate " + aggregateId, e);
         }
@@ -146,31 +151,18 @@ public class PostgresEventStore implements EventStore {
 
     private DomainEvent deserializeEvent(String eventType, int storedVersion, String payloadJson) throws Exception {
         ObjectNode payloadNode = (ObjectNode) objectMapper.readTree(payloadJson);
-
-        // Determine current version from the event class
         Class<? extends DomainEvent> eventClass = registry.get(eventType);
-        int currentVersion;
-        try {
-            // Instantiate a temporary placeholder to read the current version
-            // We read it from an existing instance if possible, otherwise default to 1
-            currentVersion = eventClass.getDeclaredConstructors()[0].getParameterCount() > 0
-                    ? getCurrentEventVersion(eventClass)
-                    : 1;
-        } catch (Exception e) {
-            currentVersion = 1;
+        if (eventClass == null) {
+            throw new IllegalArgumentException("Unknown event type: " + eventType);
         }
 
-        // Apply upcasting if the stored version is older than current
-        if (storedVersion < currentVersion) {
-            DomainEvent upcasted = upcasterChain.apply(eventType, storedVersion, payloadNode);
-            if (upcasted != null) {
-                return upcasted;
-            }
+        // Always run upcaster chain; upcasters self-select by (eventType, fromVersion)
+        DomainEvent upcasted = upcasterChain.apply(eventType, storedVersion, payloadNode.deepCopy());
+        if (upcasted != null) {
+            return upcasted;
         }
 
-        // Remove internal metadata fields before deserialization
         payloadNode.remove("_eventVersion");
-
         return objectMapper.treeToValue(payloadNode, eventClass);
     }
 
@@ -192,28 +184,5 @@ public class PostgresEventStore implements EventStore {
             return isUniqueViolation(sqlCause);
         }
         return false;
-    }
-
-    /**
-     * Retrieves the current event version by attempting to read it from the class.
-     * For record types with a default eventVersion() of 1, returns 1.
-     */
-    private int getCurrentEventVersion(Class<? extends DomainEvent> eventClass) {
-        try {
-            // Try to call static/default method via reflection isn't straightforward for records.
-            // Use the default interface method return value (1) as the standard.
-            // Only override if the class explicitly overrides eventVersion().
-            var method = eventClass.getMethod("eventVersion");
-            // Since records can't be instantiated without all parameters,
-            // we check if the method is declared (overridden) in the class
-            if (method.getDeclaringClass().equals(eventClass)) {
-                // It's overridden — try to find the version from the source annotation or constant
-                // For now, return 1 as all current events are v1
-                return 1;
-            }
-            return 1;
-        } catch (NoSuchMethodException e) {
-            return 1;
-        }
     }
 }

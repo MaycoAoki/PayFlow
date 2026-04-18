@@ -10,6 +10,7 @@ import io.payflow.domain.model.AccountStatus;
 import io.payflow.domain.model.Money;
 import io.payflow.domain.model.TransferId;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.postgresql.ds.PGSimpleDataSource;
@@ -37,7 +38,19 @@ class PostgresEventStoreReplayTest {
 
     private PostgresEventStore eventStore;
 
-    private static boolean migrationsRun = false;
+    @BeforeAll
+    static void runMigrations() throws Exception {
+        PGSimpleDataSource ds = new PGSimpleDataSource();
+        ds.setUrl(POSTGRES.getJdbcUrl());
+        ds.setUser(POSTGRES.getUsername());
+        ds.setPassword(POSTGRES.getPassword());
+        try (Connection conn = ds.getConnection(); Statement stmt = conn.createStatement()) {
+            String v1 = Files.readString(Paths.get("src/main/resources/db/migration/V1__create_event_store.sql"));
+            String v2 = Files.readString(Paths.get("src/main/resources/db/migration/V2__create_idempotency_keys.sql"));
+            stmt.execute(v1);
+            stmt.execute(v2);
+        }
+    }
 
     @BeforeEach
     void setUp() throws Exception {
@@ -45,17 +58,6 @@ class PostgresEventStoreReplayTest {
         ds.setUrl(POSTGRES.getJdbcUrl());
         ds.setUser(POSTGRES.getUsername());
         ds.setPassword(POSTGRES.getPassword());
-
-        // Run migrations only once per container lifecycle
-        if (!migrationsRun) {
-            try (Connection conn = ds.getConnection(); Statement stmt = conn.createStatement()) {
-                String v1 = Files.readString(Paths.get("src/main/resources/db/migration/V1__create_event_store.sql"));
-                String v2 = Files.readString(Paths.get("src/main/resources/db/migration/V2__create_idempotency_keys.sql"));
-                stmt.execute(v1);
-                stmt.execute(v2);
-            }
-            migrationsRun = true;
-        }
 
         ObjectMapper objectMapper = PayFlowJacksonModule.createObjectMapper();
 
