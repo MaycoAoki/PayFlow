@@ -94,11 +94,7 @@ public class PostgresEventStore implements EventStore {
             ps.executeBatch();
 
         } catch (SQLException e) {
-            if (UNIQUE_VIOLATION_SQLSTATE.equals(e.getSQLState())) {
-                throw new OptimisticLockException(aggregateId, expectedVersion, expectedVersion + 1);
-            }
-            // Also check for batch update exceptions which wrap the real cause
-            if (e.getCause() instanceof SQLException cause && UNIQUE_VIOLATION_SQLSTATE.equals(cause.getSQLState())) {
+            if (isUniqueViolation(e)) {
                 throw new OptimisticLockException(aggregateId, expectedVersion, expectedVersion + 1);
             }
             throw new RuntimeException("Failed to append events for aggregate " + aggregateId, e);
@@ -176,6 +172,26 @@ public class PostgresEventStore implements EventStore {
         payloadNode.remove("_eventVersion");
 
         return objectMapper.treeToValue(payloadNode, eventClass);
+    }
+
+    /**
+     * Checks if the SQLException (or any chained next exception) represents a unique violation.
+     * {@code BatchUpdateException} wraps the real cause in {@code getNextException()}.
+     */
+    private boolean isUniqueViolation(SQLException e) {
+        SQLException current = e;
+        while (current != null) {
+            if (UNIQUE_VIOLATION_SQLSTATE.equals(current.getSQLState())) {
+                return true;
+            }
+            current = current.getNextException();
+        }
+        // Also check Java cause chain
+        Throwable cause = e.getCause();
+        if (cause instanceof SQLException sqlCause) {
+            return isUniqueViolation(sqlCause);
+        }
+        return false;
     }
 
     /**
