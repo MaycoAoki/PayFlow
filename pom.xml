@@ -16,6 +16,7 @@
     <!-- ===== Sub-modules ===== -->
     <modules>
         <module>shared/domain</module>
+        <module>shared/infrastructure</module>
         <module>services/account-spring</module>
         <module>services/transfer-spring</module>
         <module>services/account-micronaut</module>
