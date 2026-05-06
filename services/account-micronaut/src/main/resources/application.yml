@@ -1,0 +1,40 @@
+micronaut:
+  application:
+    name: account-micronaut
+  server:
+    port: 8082
+
+payflow:
+  kafka:
+    topics:
+      account-events: payflow.account.events
+  idempotency:
+    ttl-hours: 24
+
+datasources:
+  default:
+    url: ${DATASOURCE_URL:`jdbc:postgresql://localhost:5432/payflow`}
+    username: ${DATASOURCE_USERNAME:payflow}
+    password: ${DATASOURCE_PASSWORD:payflow}
+    driver-class-name: org.postgresql.Driver
+
+flyway:
+  datasources:
+    default:
+      enabled: true
+      locations: classpath:db/migration
+
+kafka:
+  bootstrap:
+    servers: ${KAFKA_BOOTSTRAP_SERVERS:`localhost:9092`}
+  consumers:
+    default:
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+endpoints:
+  health:
+    enabled: true
+  prometheus:
+    enabled: true
+    sensitive: false
