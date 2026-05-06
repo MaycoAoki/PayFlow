@@ -1,0 +1,9 @@
+datasources:
+  default:
+    url: ${TC_DATASOURCE_URL:`jdbc:postgresql://localhost:5432/payflow`}
+    username: ${TC_DATASOURCE_USERNAME:payflow}
+    password: ${TC_DATASOURCE_PASSWORD:payflow}
+
+kafka:
+  bootstrap:
+    servers: ${TC_KAFKA_BOOTSTRAP_SERVERS:`localhost:9092`}
