@@ -60,4 +60,16 @@ public class AccountProjection {
         this.version++;
         this.updatedAt = Instant.now();
     }
+
+    public void applyDebit(BigDecimal amount) {
+        this.balance = this.balance.subtract(amount);
+        this.version++;
+        this.updatedAt = Instant.now();
+    }
+
+    public void applyCredit(BigDecimal amount) {
+        this.balance = this.balance.add(amount);
+        this.version++;
+        this.updatedAt = Instant.now();
+    }
 }
