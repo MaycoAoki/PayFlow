@@ -1,0 +1,13 @@
+package io.payflow.account.api.dto;
+
+import io.micronaut.core.annotation.Introspected;
+import io.micronaut.serde.annotation.Serdeable;
+import jakarta.validation.constraints.NotBlank;
+
+@Introspected
+@Serdeable
+public record CreateAccountRequest(
+        @NotBlank String ownerId,
+        @NotBlank String initialBalance,
+        @NotBlank String currency
+) {}
