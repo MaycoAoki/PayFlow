@@ -2,6 +2,7 @@ package io.payflow.account.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.tracing.Tracer;
 import io.payflow.account.api.dto.AccountResponse;
 import io.payflow.account.api.dto.CreateAccountRequest;
 import io.payflow.account.api.dto.DepositRequest;
@@ -42,19 +43,22 @@ public class AccountService {
     private final IdempotencyRepository idempotencyRepo;
     private final AccountEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
+    private final Tracer tracer;
 
     public AccountService(EventStore eventStore,
                           AccountProjectionRepository projectionRepo,
                           TransactionHistoryRepository historyRepo,
                           IdempotencyRepository idempotencyRepo,
                           AccountEventPublisher eventPublisher,
-                          ObjectMapper objectMapper) {
+                          ObjectMapper objectMapper,
+                          Tracer tracer) {
         this.eventStore = eventStore;
         this.projectionRepo = projectionRepo;
         this.historyRepo = historyRepo;
         this.idempotencyRepo = idempotencyRepo;
         this.eventPublisher = eventPublisher;
         this.objectMapper = objectMapper;
+        this.tracer = tracer;
     }
 
     public Mono<AccountResponse> createAccount(CreateAccountRequest req, String idempotencyKey) {
@@ -77,7 +81,12 @@ public class AccountService {
         Money initialBalance = Money.of(req.initialBalance(), req.currency());
 
         var event = new AccountCreatedEvent(accountId, req.ownerId(), initialBalance, Instant.now());
-        eventStore.append(accountId.toString(), "Account", 0L, List.of(event));
+        var span = tracer.nextSpan().name("event-store.append").tag("aggregate", "Account").start();
+        try (var ws = tracer.withSpan(span)) {
+            eventStore.append(accountId.toString(), "Account", 0L, List.of(event));
+        } finally {
+            span.end();
+        }
 
         var projection = new AccountProjection(
                 accountId.toString(), req.ownerId(),
@@ -119,7 +128,12 @@ public class AccountService {
         Money amount = Money.of(req.amount(), req.currency());
 
         var event = new MoneyDepositedEvent(AccountId.of(accountId), amount, Instant.now());
-        eventStore.append(accountId, "Account", expectedVersion, List.of(event));
+        var span = tracer.nextSpan().name("event-store.append").tag("aggregate", "Account").start();
+        try (var ws = tracer.withSpan(span)) {
+            eventStore.append(accountId, "Account", expectedVersion, List.of(event));
+        } finally {
+            span.end();
+        }
 
         projection.applyDeposit(amount.amount());
         projectionRepo.save(projection);
