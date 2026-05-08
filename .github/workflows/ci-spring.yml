@@ -21,7 +21,7 @@ jobs:
 
       - name: Build and test (Spring modules)
         run: |
-          ./mvnw test \
+          mvn test \
             -pl shared/domain,shared/infrastructure,services/account-spring,services/transfer-spring \
             -am \
             --no-transfer-progress

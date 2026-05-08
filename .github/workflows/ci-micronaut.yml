@@ -21,7 +21,7 @@ jobs:
 
       - name: Build and test (Micronaut modules)
         run: |
-          ./mvnw test \
+          mvn test \
             -pl shared/domain,shared/infrastructure,services/account-micronaut,services/transfer-micronaut \
             -am \
             --no-transfer-progress
