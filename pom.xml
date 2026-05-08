@@ -49,6 +49,9 @@
         <!-- Serialization -->
         <jackson.version>2.17.2</jackson.version>
 
+        <!-- Spring Cloud Contract -->
+        <spring-cloud-contract.version>4.1.4</spring-cloud-contract.version>
+
         <!-- Build plugins -->
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.3.1</maven-surefire-plugin.version>
@@ -81,6 +84,15 @@
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-bom</artifactId>
                 <version>${opentelemetry-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring Cloud BOM -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>2023.0.3</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -178,6 +190,11 @@
                     <groupId>io.micronaut.maven</groupId>
                     <artifactId>micronaut-maven-plugin</artifactId>
                     <version>4.5.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.springframework.cloud</groupId>
+                    <artifactId>spring-cloud-contract-maven-plugin</artifactId>
+                    <version>${spring-cloud-contract.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
