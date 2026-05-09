@@ -45,12 +45,11 @@ public class AccountEventConsumer {
 
     @KafkaListener(topics = "${payflow.kafka.topics.account-events}", groupId = "transfer-service")
     public void onAccountEvent(ConsumerRecord<String, String> record, Acknowledgment ack) {
-        var extractedContext = propagator.extract(record.headers(),
-                (carrier, key) -> {
-                    var header = carrier.lastHeader(key);
-                    return header == null ? null : new String(header.value(), StandardCharsets.UTF_8);
-                });
-        var span = tracer.nextSpan(extractedContext)
+        var span = propagator.extract(record.headers(),
+                        (carrier, key) -> {
+                            var header = carrier.lastHeader(key);
+                            return header == null ? null : new String(header.value(), StandardCharsets.UTF_8);
+                        })
                 .name("kafka.account-event.consume")
                 .start();
         try (var ws = tracer.withSpan(span)) {
