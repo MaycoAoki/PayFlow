@@ -29,6 +29,20 @@ public class GlobalExceptionHandler implements ExceptionHandler<RuntimeException
         if (ex instanceof IllegalArgumentException) {
             return HttpResponse.badRequest(Map.of("error", "BAD_REQUEST", "message", ex.getMessage()));
         }
-        return HttpResponse.serverError(Map.of("error", "INTERNAL_ERROR", "message", ex.getMessage()));
+        String message = buildMessageChain(ex);
+        return HttpResponse.serverError(Map.of("error", "INTERNAL_ERROR", "message", message));
+    }
+
+    private String buildMessageChain(Throwable t) {
+        StringBuilder sb = new StringBuilder(t.getClass().getSimpleName()).append(": ").append(t.getMessage());
+        Throwable cause = t.getCause();
+        if (cause != null) {
+            sb.append(" | caused by: ").append(cause.getClass().getSimpleName()).append(": ").append(cause.getMessage());
+            Throwable nested = cause.getCause();
+            if (nested != null) {
+                sb.append(" | caused by: ").append(nested.getClass().getSimpleName()).append(": ").append(nested.getMessage());
+            }
+        }
+        return sb.toString();
     }
 }

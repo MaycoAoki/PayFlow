@@ -25,3 +25,8 @@ kafka:
     default:
       auto-offset-reset: earliest
       enable-auto-commit: false
+
+logger:
+  levels:
+    io.payflow: DEBUG
+    io.micronaut.http.server: DEBUG
