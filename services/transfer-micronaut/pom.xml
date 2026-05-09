@@ -152,6 +152,17 @@
                             <version>${micronaut.version}</version>
                         </path>
                         <path>
+                            <groupId>io.micronaut.validation</groupId>
+                            <artifactId>micronaut-validation-processor</artifactId>
+                            <version>${micronaut.version}</version>
+                        </path>
+                        <path>
+                            <!-- Constraint validator impls needed by validation-processor at compile time -->
+                            <groupId>io.micronaut.validation</groupId>
+                            <artifactId>micronaut-validation</artifactId>
+                            <version>${micronaut.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.micronaut.serde</groupId>
                             <artifactId>micronaut-serde-processor</artifactId>
                             <version>${micronaut-serde.version}</version>
