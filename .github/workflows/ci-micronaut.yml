@@ -24,7 +24,8 @@ jobs:
           mvn test \
             -pl shared/domain,shared/infrastructure,services/account-micronaut,services/transfer-micronaut \
             -am \
-            --no-transfer-progress
+            --no-transfer-progress \
+            -e
         env:
           DOCKER_HOST: unix:///var/run/docker.sock
           TESTCONTAINERS_RYUK_DISABLED: true
