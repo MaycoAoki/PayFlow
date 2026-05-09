@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -77,6 +78,9 @@ class ProjectorReplayIntegrationTest {
     @Autowired
     KafkaAdmin kafkaAdmin;
 
+    @Autowired
+    KafkaListenerEndpointRegistry listenerRegistry;
+
     @Value("${payflow.kafka.topics.account-events}")
     String accountEventsTopic;
 
@@ -111,16 +115,23 @@ class ProjectorReplayIntegrationTest {
         BigDecimal balanceBeforeTruncate = projectionRepo.findById(accountId).get().getBalance();
         assertThat(balanceBeforeTruncate).isEqualByComparingTo(new BigDecimal("700.00"));
 
-        // ── Step 4: Delete projection — simulate fresh projector start ──────────
+        // ── Step 4: Stop the projector listener so its consumer group becomes empty ──
+        // alterConsumerGroupOffsets requires an empty group (no active members).
+        listenerRegistry.stop();
+
+        // ── Step 5: Delete projection — simulate fresh projector start ──────────
         projectionRepo.deleteById(accountId);
         assertThat(projectionRepo.findById(accountId)).isEmpty();
 
-        // ── Step 5: Reset consumer group offsets to 0 (replay from beginning) ──
+        // ── Step 6: Reset consumer group offsets to 0 (replay from beginning) ──
         // This replicates what an ops team would do with kafka-consumer-groups.sh
         // --reset-offsets --to-earliest before restarting a stateless projector.
         resetConsumerGroupOffsetsToBeginning();
 
-        // ── Step 6: Wait for projector to rebuild the projection ────────────────
+        // ── Step 7: Restart the listener — it will replay from offset 0 ──────────
+        listenerRegistry.start();
+
+        // ── Step 8: Wait for projector to rebuild the projection ────────────────
         await().atMost(30, TimeUnit.SECONDS)
                 .until(() -> projectionRepo.findById(accountId).isPresent());
 

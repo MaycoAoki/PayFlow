@@ -152,8 +152,16 @@
                 <extensions>true</extensions>
                 <configuration>
                     <baseClassForTests>io.payflow.account.contract.ContractTestBase</baseClassForTests>
-                    <testMode>EXPLICIT</testMode>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-stubs-before-test</id>
+                        <goals>
+                            <goal>generateStubs</goal>
+                        </goals>
+                        <phase>generate-test-resources</phase>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
