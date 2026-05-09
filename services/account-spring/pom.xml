@@ -149,17 +149,37 @@
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-contract-maven-plugin</artifactId>
                 <version>${spring-cloud-contract.version}</version>
-                <extensions>true</extensions>
                 <configuration>
                     <baseClassForTests>io.payflow.account.contract.ContractTestBase</baseClassForTests>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>generate-stubs-before-test</id>
+                        <id>scc-convert-and-generate</id>
+                        <phase>generate-test-sources</phase>
                         <goals>
-                            <goal>generateStubs</goal>
+                            <goal>convert</goal>
+                            <goal>generateTests</goal>
                         </goals>
-                        <phase>generate-test-resources</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-stubs-as-test-resource</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-resource</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}/stubs</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
