@@ -33,7 +33,7 @@
         <micronaut.version>4.5.0</micronaut.version>
         <micronaut-platform.version>4.5.0</micronaut-platform.version>
         <!-- micronaut-serde uses its own 2.x version series, not the core 4.x series -->
-        <micronaut-serde.version>2.9.0</micronaut-serde.version>
+        <micronaut-serde.version>2.11.0</micronaut-serde.version>
 
         <!-- Persistence / messaging -->
         <postgresql.version>42.7.3</postgresql.version>
