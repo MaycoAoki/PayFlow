@@ -76,6 +76,9 @@ class ProjectorReplayIntegrationTest {
     AccountProjectionRepository projectionRepo;
 
     @Autowired
+    io.payflow.account.persistence.TransactionHistoryRepository historyRepo;
+
+    @Autowired
     KafkaAdmin kafkaAdmin;
 
     @Autowired
@@ -119,8 +122,9 @@ class ProjectorReplayIntegrationTest {
         // alterConsumerGroupOffsets requires an empty group (no active members).
         listenerRegistry.stop();
 
-        // ── Step 5: Delete projection — simulate fresh projector start ──────────
+        // ── Step 5: Delete projection + history — simulate full replay from scratch ──
         projectionRepo.deleteById(accountId);
+        historyRepo.deleteByAccountId(accountId);
         assertThat(projectionRepo.findById(accountId)).isEmpty();
 
         // ── Step 6: Reset consumer group offsets to 0 (replay from beginning) ──

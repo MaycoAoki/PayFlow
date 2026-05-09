@@ -57,7 +57,9 @@ public class AccountProjector {
                 case "AccountCreatedEvent" -> {
                     var event = objectMapper.treeToValue(node, AccountCreatedEvent.class);
                     String accountId = event.accountId().toString();
-                    if (!projectionRepo.existsById(accountId)) {
+                    // Skip if already recorded — service writes history synchronously;
+                    // projector uses occurredAt as idempotency key to avoid double-writes.
+                    if (!historyRepo.existsByAccountIdAndOccurredAt(accountId, event.occurredAt())) {
                         projectionRepo.save(new AccountProjection(
                                 accountId, event.ownerId(),
                                 event.initialBalance().amount(),
@@ -72,58 +74,68 @@ public class AccountProjector {
                 }
                 case "MoneyDepositedEvent" -> {
                     var event = objectMapper.treeToValue(node, MoneyDepositedEvent.class);
-                    projectionRepo.findById(event.accountId().toString()).ifPresent(p -> {
-                        p.applyDeposit(event.amount().amount());
-                        projectionRepo.save(p);
-                        historyRepo.save(new TransactionHistoryEntry(
-                                event.accountId().toString(), "MoneyDepositedEvent",
-                                event.amount().amount(), event.amount().currency().getCurrencyCode(),
-                                null, event.occurredAt()));
-                    });
+                    if (!historyRepo.existsByAccountIdAndOccurredAt(event.accountId().toString(), event.occurredAt())) {
+                        projectionRepo.findById(event.accountId().toString()).ifPresent(p -> {
+                            p.applyDeposit(event.amount().amount());
+                            projectionRepo.save(p);
+                            historyRepo.save(new TransactionHistoryEntry(
+                                    event.accountId().toString(), "MoneyDepositedEvent",
+                                    event.amount().amount(), event.amount().currency().getCurrencyCode(),
+                                    null, event.occurredAt()));
+                        });
+                    }
                 }
                 case "MoneyDebitedEvent" -> {
                     var event = objectMapper.treeToValue(node, MoneyDebitedEvent.class);
-                    projectionRepo.findById(event.accountId().toString()).ifPresent(p -> {
-                        p.applyDebit(event.amount().amount());
-                        projectionRepo.save(p);
-                        historyRepo.save(new TransactionHistoryEntry(
-                                event.accountId().toString(), "MoneyDebitedEvent",
-                                event.amount().amount(), event.amount().currency().getCurrencyCode(),
-                                event.transferId().toString(), event.occurredAt()));
-                    });
+                    if (!historyRepo.existsByAccountIdAndOccurredAt(event.accountId().toString(), event.occurredAt())) {
+                        projectionRepo.findById(event.accountId().toString()).ifPresent(p -> {
+                            p.applyDebit(event.amount().amount());
+                            projectionRepo.save(p);
+                            historyRepo.save(new TransactionHistoryEntry(
+                                    event.accountId().toString(), "MoneyDebitedEvent",
+                                    event.amount().amount(), event.amount().currency().getCurrencyCode(),
+                                    event.transferId().toString(), event.occurredAt()));
+                        });
+                    }
                 }
                 case "MoneyCreditedEvent" -> {
                     var event = objectMapper.treeToValue(node, MoneyCreditedEvent.class);
-                    projectionRepo.findById(event.accountId().toString()).ifPresent(p -> {
-                        p.applyCredit(event.amount().amount());
-                        projectionRepo.save(p);
-                        historyRepo.save(new TransactionHistoryEntry(
-                                event.accountId().toString(), "MoneyCreditedEvent",
-                                event.amount().amount(), event.amount().currency().getCurrencyCode(),
-                                event.transferId().toString(), event.occurredAt()));
-                    });
+                    if (!historyRepo.existsByAccountIdAndOccurredAt(event.accountId().toString(), event.occurredAt())) {
+                        projectionRepo.findById(event.accountId().toString()).ifPresent(p -> {
+                            p.applyCredit(event.amount().amount());
+                            projectionRepo.save(p);
+                            historyRepo.save(new TransactionHistoryEntry(
+                                    event.accountId().toString(), "MoneyCreditedEvent",
+                                    event.amount().amount(), event.amount().currency().getCurrencyCode(),
+                                    event.transferId().toString(), event.occurredAt()));
+                        });
+                    }
                 }
                 case "MoneyDebitReversedEvent" -> {
                     var event = objectMapper.treeToValue(node, MoneyDebitReversedEvent.class);
-                    projectionRepo.findById(event.accountId().toString()).ifPresent(p -> {
-                        p.applyCredit(event.amount().amount());
-                        projectionRepo.save(p);
-                        historyRepo.save(new TransactionHistoryEntry(
-                                event.accountId().toString(), "MoneyDebitReversedEvent",
-                                event.amount().amount(), event.amount().currency().getCurrencyCode(),
-                                event.transferId().toString(), event.occurredAt()));
-                    });
+                    if (!historyRepo.existsByAccountIdAndOccurredAt(event.accountId().toString(), event.occurredAt())) {
+                        projectionRepo.findById(event.accountId().toString()).ifPresent(p -> {
+                            p.applyCredit(event.amount().amount());
+                            projectionRepo.save(p);
+                            historyRepo.save(new TransactionHistoryEntry(
+                                    event.accountId().toString(), "MoneyDebitReversedEvent",
+                                    event.amount().amount(), event.amount().currency().getCurrencyCode(),
+                                    event.transferId().toString(), event.occurredAt()));
+                        });
+                    }
                 }
                 case "MoneyCreditReversedEvent" -> {
                     var event = objectMapper.treeToValue(node, MoneyCreditReversedEvent.class);
-                    projectionRepo.findById(event.accountId().toString()).ifPresent(p -> {
-                        p.applyDebit(event.amount().amount());
-                        projectionRepo.save(p);
-                        historyRepo.save(new TransactionHistoryEntry(
-                                event.accountId().toString(), "MoneyCreditReversedEvent",
-                                event.amount().amount(), event.amount().currency().getCurrencyCode(),
-                                event.transferId().toString(), event.occurredAt()));
-                    });
+                    if (!historyRepo.existsByAccountIdAndOccurredAt(event.accountId().toString(), event.occurredAt())) {
+                        projectionRepo.findById(event.accountId().toString()).ifPresent(p -> {
+                            p.applyDebit(event.amount().amount());
+                            projectionRepo.save(p);
+                            historyRepo.save(new TransactionHistoryEntry(
+                                    event.accountId().toString(), "MoneyCreditReversedEvent",
+                                    event.amount().amount(), event.amount().currency().getCurrencyCode(),
+                                    event.transferId().toString(), event.occurredAt()));
+                        });
+                    }
                 }
                 default -> log.debug("Projector ignoring event type={}", eventType);
             }

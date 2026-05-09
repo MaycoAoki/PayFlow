@@ -1,6 +1,7 @@
 package io.payflow.account.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.payflow.domain.event.DomainEvent;
 import io.payflow.infrastructure.eventstore.PayFlowJacksonModule;
 import org.slf4j.Logger;
@@ -27,8 +28,10 @@ public class AccountEventPublisher {
 
     public void publish(String accountId, DomainEvent event) {
         try {
-            String payload = objectMapper.writeValueAsString(event);
-            kafkaTemplate.send(accountEventsTopic, accountId, payload);
+            ObjectNode node = (ObjectNode) objectMapper.readTree(objectMapper.writeValueAsString(event));
+            node.put("_eventType", event.getClass().getSimpleName());
+            node.put("_eventVersion", event.eventVersion());
+            kafkaTemplate.send(accountEventsTopic, accountId, objectMapper.writeValueAsString(node));
             log.info("Published event eventType={} accountId={}", event.getClass().getSimpleName(), accountId);
         } catch (Exception e) {
             log.error("Failed to publish event eventType={} accountId={}", event.getClass().getSimpleName(), accountId, e);
