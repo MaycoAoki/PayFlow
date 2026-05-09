@@ -155,6 +155,10 @@
                     <includes>
                         <include>**/*Test.java</include>
                     </includes>
+                    <excludes>
+                        <!-- Consumer contract test requires stubs installed via mvn verify/install -->
+                        <exclude>**/contract/MoneyDebitedContractTest.java</exclude>
+                    </excludes>
                     <environmentVariables>
                         <DOCKER_HOST>unix:///var/run/docker.sock</DOCKER_HOST>
                         <TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>/var/run/docker.sock</TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>
