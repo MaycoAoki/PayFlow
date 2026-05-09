@@ -62,7 +62,7 @@ class AccountControllerIntegrationTest {
 
         HttpResponse<AccountResponse> resp = client.toBlocking().exchange(req, AccountResponse.class);
 
-        assertThat(resp.status()).isEqualTo(HttpStatus.CREATED);
+        assertThat(resp.status().getCode()).isEqualTo(HttpStatus.CREATED.getCode());
         AccountResponse body = resp.body();
         assertThat(body).isNotNull();
         assertThat(body.accountId()).isNotBlank();
@@ -79,8 +79,8 @@ class AccountControllerIntegrationTest {
 
         assertThatThrownBy(() -> client.toBlocking().exchange(req, AccountResponse.class))
                 .isInstanceOf(HttpClientResponseException.class)
-                .satisfies(ex -> assertThat(((HttpClientResponseException) ex).getStatus())
-                        .isEqualTo(HttpStatus.BAD_REQUEST));
+                .satisfies(ex -> assertThat(((HttpClientResponseException) ex).getStatus().getCode())
+                        .isEqualTo(HttpStatus.BAD_REQUEST.getCode()));
     }
 
     @Test
@@ -96,7 +96,7 @@ class AccountControllerIntegrationTest {
         var getReq = HttpRequest.GET("/accounts/" + created.accountId());
         HttpResponse<AccountResponse> resp = client.toBlocking().exchange(getReq, AccountResponse.class);
 
-        assertThat(resp.status()).isEqualTo(HttpStatus.OK);
+        assertThat(resp.status().getCode()).isEqualTo(HttpStatus.OK.getCode());
         AccountResponse fetched = resp.body();
         assertThat(fetched).isNotNull();
         assertThat(fetched.accountId()).isEqualTo(created.accountId());
@@ -111,8 +111,8 @@ class AccountControllerIntegrationTest {
 
         assertThatThrownBy(() -> client.toBlocking().exchange(req, AccountResponse.class))
                 .isInstanceOf(HttpClientResponseException.class)
-                .satisfies(ex -> assertThat(((HttpClientResponseException) ex).getStatus())
-                        .isEqualTo(HttpStatus.NOT_FOUND));
+                .satisfies(ex -> assertThat(((HttpClientResponseException) ex).getStatus().getCode())
+                        .isEqualTo(HttpStatus.NOT_FOUND.getCode()));
     }
 
     @Test
@@ -131,7 +131,7 @@ class AccountControllerIntegrationTest {
                 .header("Idempotency-Key", UUID.randomUUID().toString());
 
         HttpResponse<?> depositResp = client.toBlocking().exchange(depositReq);
-        assertThat(depositResp.status()).isEqualTo(HttpStatus.ACCEPTED);
+        assertThat(depositResp.status().getCode()).isEqualTo(HttpStatus.ACCEPTED.getCode());
 
         var getReq = HttpRequest.GET("/accounts/" + created.accountId());
         AccountResponse updated = client.toBlocking().exchange(getReq, AccountResponse.class).body();
@@ -167,7 +167,7 @@ class AccountControllerIntegrationTest {
         var eventsReq = HttpRequest.GET("/accounts/" + created.accountId() + "/events");
         HttpResponse<String> resp = client.toBlocking().exchange(eventsReq, String.class);
 
-        assertThat(resp.status()).isEqualTo(HttpStatus.OK);
+        assertThat(resp.status().getCode()).isEqualTo(HttpStatus.OK.getCode());
         assertThat(resp.body()).contains("AccountCreatedEvent");
         assertThat(resp.body()).contains("occurredAt");
     }
@@ -177,7 +177,7 @@ class AccountControllerIntegrationTest {
     void healthLiveness_returns200() {
         var req = HttpRequest.GET("/health/liveness");
         HttpResponse<?> resp = client.toBlocking().exchange(req);
-        assertThat(resp.status()).isEqualTo(HttpStatus.OK);
+        assertThat(resp.status().getCode()).isEqualTo(HttpStatus.OK.getCode());
     }
 
     @Test
@@ -185,6 +185,6 @@ class AccountControllerIntegrationTest {
     void healthReadiness_returns200() {
         var req = HttpRequest.GET("/health/readiness");
         HttpResponse<?> resp = client.toBlocking().exchange(req);
-        assertThat(resp.status()).isEqualTo(HttpStatus.OK);
+        assertThat(resp.status().getCode()).isEqualTo(HttpStatus.OK.getCode());
     }
 }

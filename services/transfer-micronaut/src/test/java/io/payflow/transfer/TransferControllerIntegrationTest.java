@@ -57,7 +57,7 @@ class TransferControllerIntegrationTest {
 
         var response = client.toBlocking().exchange(httpRequest, TransferResponse.class);
 
-        assertThat(response.status()).isEqualTo(HttpStatus.ACCEPTED);
+        assertThat(response.status().getCode()).isEqualTo(HttpStatus.ACCEPTED.getCode());
         assertThat(response.body()).isNotNull();
         TransferResponse body = response.body().get();
         assertThat(body.transferId()).isNotBlank();
@@ -78,7 +78,7 @@ class TransferControllerIntegrationTest {
         var response = client.toBlocking().onErrorReturn(throwable -> true, null)
                 .exchange(httpRequest, TransferResponse.class);
 
-        assertThat(response.status()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.status().getCode()).isEqualTo(HttpStatus.BAD_REQUEST.getCode());
     }
 
     @Test
@@ -99,7 +99,7 @@ class TransferControllerIntegrationTest {
         var getRequest = HttpRequest.GET("/transfers/" + created.transferId());
         var getResponse = client.toBlocking().exchange(getRequest, TransferResponse.class);
 
-        assertThat(getResponse.status()).isEqualTo(HttpStatus.OK);
+        assertThat(getResponse.status().getCode()).isEqualTo(HttpStatus.OK.getCode());
         TransferResponse fetched = getResponse.body().get();
         assertThat(fetched.transferId()).isEqualTo(created.transferId());
         assertThat(fetched.status()).isEqualTo("INITIATED");
@@ -112,7 +112,7 @@ class TransferControllerIntegrationTest {
         var response = client.toBlocking().onErrorReturn(throwable -> true, null)
                 .exchange(getRequest, TransferResponse.class);
 
-        assertThat(response.status()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.status().getCode()).isEqualTo(HttpStatus.NOT_FOUND.getCode());
     }
 
     @Test
@@ -142,7 +142,7 @@ class TransferControllerIntegrationTest {
         var request = HttpRequest.GET("/health/liveness");
         var response = client.toBlocking().exchange(request);
 
-        assertThat(response.status()).isEqualTo(HttpStatus.OK);
+        assertThat(response.status().getCode()).isEqualTo(HttpStatus.OK.getCode());
     }
 
     @Test
@@ -150,6 +150,6 @@ class TransferControllerIntegrationTest {
         var request = HttpRequest.GET("/health/readiness");
         var response = client.toBlocking().exchange(request);
 
-        assertThat(response.status()).isEqualTo(HttpStatus.OK);
+        assertThat(response.status().getCode()).isEqualTo(HttpStatus.OK.getCode());
     }
 }
