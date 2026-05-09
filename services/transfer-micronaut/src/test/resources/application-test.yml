@@ -1,3 +1,10 @@
+payflow:
+  kafka:
+    topics:
+      account-events: payflow.account.events
+      transfer-events: payflow.transfer.events
+      transfer-commands: payflow.transfer.commands
+
 datasources:
   default:
     url: jdbc:postgresql://localhost:5432/payflow
@@ -5,6 +12,16 @@ datasources:
     password: payflow
     driver-class-name: org.postgresql.Driver
 
+flyway:
+  datasources:
+    default:
+      enabled: true
+      locations: classpath:db/migration
+
 kafka:
   bootstrap:
     servers: localhost:9092
+  consumers:
+    default:
+      auto-offset-reset: earliest
+      enable-auto-commit: false
