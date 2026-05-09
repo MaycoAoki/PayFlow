@@ -28,6 +28,9 @@ public class ContainersExtension implements BeforeAllCallback {
             System.setProperty("datasources.default.password", POSTGRES.getPassword());
             System.setProperty("datasources.default.driver-class-name", "org.postgresql.Driver");
             System.setProperty("kafka.bootstrap.servers", KAFKA.getBootstrapServers());
+            System.setProperty("payflow.kafka.topics.account-events", "payflow.account.events");
+            System.setProperty("payflow.kafka.topics.transfer-events", "payflow.transfer.events");
+            System.setProperty("payflow.kafka.topics.transfer-commands", "payflow.transfer.commands");
             started = true;
         }
     }
