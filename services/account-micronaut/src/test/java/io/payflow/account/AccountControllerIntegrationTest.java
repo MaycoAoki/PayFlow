@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ExtendWith(ContainersExtension.class)
-@MicronautTest
+@MicronautTest(transactional = false)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class AccountControllerIntegrationTest {
 

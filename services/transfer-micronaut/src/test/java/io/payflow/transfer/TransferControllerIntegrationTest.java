@@ -16,7 +16,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(ContainersExtension.class)
-@MicronautTest
+@MicronautTest(transactional = false)
 class TransferControllerIntegrationTest {
 
     @Inject
