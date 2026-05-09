@@ -5,40 +5,41 @@ import io.micronaut.http.HttpStatus;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.micronaut.test.support.TestPropertyProvider;
 import io.payflow.transfer.api.dto.InitiateTransferRequest;
 import io.payflow.transfer.api.dto.TransferResponse;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @MicronautTest
-@Testcontainers
-class TransferControllerIntegrationTest {
+class TransferControllerIntegrationTest implements TestPropertyProvider {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("payflow")
             .withUsername("payflow")
             .withPassword("payflow");
 
-    @Container
-    static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0"));
+    static final KafkaContainer KAFKA = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0"));
 
-    static {
-        postgres.start();
-        kafka.start();
-        System.setProperty("TC_DATASOURCE_URL", postgres.getJdbcUrl());
-        System.setProperty("TC_DATASOURCE_USERNAME", postgres.getUsername());
-        System.setProperty("TC_DATASOURCE_PASSWORD", postgres.getPassword());
-        System.setProperty("TC_KAFKA_BOOTSTRAP_SERVERS", kafka.getBootstrapServers());
+    @Override
+    public Map<String, String> getProperties() {
+        if (!POSTGRES.isRunning()) POSTGRES.start();
+        if (!KAFKA.isRunning()) KAFKA.start();
+        return Map.of(
+                "datasources.default.url", POSTGRES.getJdbcUrl(),
+                "datasources.default.username", POSTGRES.getUsername(),
+                "datasources.default.password", POSTGRES.getPassword(),
+                "datasources.default.driver-class-name", "org.postgresql.Driver",
+                "kafka.bootstrap.servers", KAFKA.getBootstrapServers()
+        );
     }
 
     @Inject
