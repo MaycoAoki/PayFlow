@@ -147,19 +147,14 @@
                             <version>${micronaut.version}</version>
                         </path>
                         <path>
+                            <!-- Explicit micronaut-context ensures 4.5.0 wins over transitive older versions -->
+                            <groupId>io.micronaut</groupId>
+                            <artifactId>micronaut-context</artifactId>
+                            <version>${micronaut.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.micronaut.data</groupId>
                             <artifactId>micronaut-data-processor</artifactId>
-                            <version>${micronaut.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.micronaut.validation</groupId>
-                            <artifactId>micronaut-validation-processor</artifactId>
-                            <version>${micronaut.version}</version>
-                        </path>
-                        <path>
-                            <!-- Constraint validator impls needed by validation-processor at compile time -->
-                            <groupId>io.micronaut.validation</groupId>
-                            <artifactId>micronaut-validation</artifactId>
                             <version>${micronaut.version}</version>
                         </path>
                         <path>
