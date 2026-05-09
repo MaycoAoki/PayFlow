@@ -7,7 +7,6 @@ import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.micronaut.test.support.TestPropertyProvider;
 import io.payflow.account.api.dto.AccountResponse;
 import io.payflow.account.api.dto.CreateAccountRequest;
 import io.payflow.account.api.dto.DepositRequest;
@@ -16,40 +15,17 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.testcontainers.containers.KafkaContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@ExtendWith(ContainersExtension.class)
 @MicronautTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class AccountControllerIntegrationTest implements TestPropertyProvider {
-
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16")
-            .withDatabaseName("payflow")
-            .withUsername("payflow")
-            .withPassword("payflow");
-
-    static final KafkaContainer KAFKA = new KafkaContainer(
-            DockerImageName.parse("confluentinc/cp-kafka:7.6.0"));
-
-    @Override
-    public Map<String, String> getProperties() {
-        if (!POSTGRES.isRunning()) POSTGRES.start();
-        if (!KAFKA.isRunning()) KAFKA.start();
-        return Map.of(
-                "datasources.default.url", POSTGRES.getJdbcUrl(),
-                "datasources.default.username", POSTGRES.getUsername(),
-                "datasources.default.password", POSTGRES.getPassword(),
-                "datasources.default.driver-class-name", "org.postgresql.Driver",
-                "kafka.bootstrap.servers", KAFKA.getBootstrapServers()
-        );
-    }
+class AccountControllerIntegrationTest {
 
     @Inject
     @Client("/")
