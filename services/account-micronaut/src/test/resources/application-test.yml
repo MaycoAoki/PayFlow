@@ -1,9 +1,9 @@
 datasources:
   default:
-    url: ${DATASOURCE_URL:`jdbc:postgresql://localhost:5432/payflow`}
+    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/payflow}
     username: ${DATASOURCE_USERNAME:payflow}
     password: ${DATASOURCE_PASSWORD:payflow}
 
 kafka:
   bootstrap:
-    servers: ${KAFKA_BOOTSTRAP_SERVERS:`localhost:9092`}
+    servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
