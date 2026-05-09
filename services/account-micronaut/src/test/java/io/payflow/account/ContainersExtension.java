@@ -1,5 +1,6 @@
 package io.payflow.account;
 
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.KafkaContainer;
@@ -30,6 +31,11 @@ public class ContainersExtension implements BeforeAllCallback {
             System.setProperty("kafka.bootstrap.servers", KAFKA.getBootstrapServers());
             System.setProperty("payflow.kafka.topics.account-events", "payflow.account.events");
             System.setProperty("payflow.idempotency.ttl-hours", "24");
+            Flyway.configure()
+                    .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
+                    .locations("classpath:db/migration")
+                    .load()
+                    .migrate();
             started = true;
         }
     }
